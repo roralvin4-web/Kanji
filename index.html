@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>漢字クエスト: N5 & N4 Master Jukugo RPG</title>
+    <style>
+        :root {
+            --bg-dark: #0a0a12;
+            --card-bg: #121225;
+            --accent-red: #ff2e63;
+            --accent-cyan: #08d9d6;
+            --accent-gold: #f9ed69;
+            --text-main: #f4f4f4;
+            --font-pixel: 'Courier New', Courier, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 10px;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-pixel);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        #game-box {
+            width: 100%;
+            max-width: 850px;
+            background: var(--card-bg);
+            border: 4px solid var(--accent-cyan);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 25px rgba(8, 217, 214, 0.3);
+            position: relative;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px dashed #252545;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 22px;
+            color: var(--accent-gold);
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        .mode-container {
+            display: flex;
+            gap: 8px;
+        }
+
+        .mode-btn {
+            background: #1f1f3a;
+            color: #aaa;
+            border: 1px solid #3d3d66;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .mode-btn.active {
+            background: var(--accent-red);
+            color: #fff;
+            border-color: #fff;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+            background: #090914;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #222244;
+            font-size: 14px;
+        }
+
+        .bar-outer {
+            width: 100%;
+            height: 12px;
+            background: #222;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 4px;
+            border: 1px solid #444;
+        }
+
+        .hp-inner {
+            height: 100%;
+            width: 100%;
+            background: #2ed573;
+            transition: width 0.3s;
+        }
+
+        .limit-inner {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ff9f43, #f39c12);
+            transition: width 0.2s;
+        }
+
+        .arena {
+            position: relative;
+            height: 220px;
+            background: radial-gradient(circle, #1a1a3a 0%, #05050d 100%);
+            border-radius: 10px;
+            border: 2px solid #333366;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 50px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .sprite {
+            font-size: 90px;
+            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.8));
+            transition: transform 0.1s;
+        }
+
+        .damage-pop {
+            position: absolute;
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--accent-red);
+            animation: floatUp 0.6s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-40px); }
+        }
+
+        .question-card {
+            background: #0d0d1e;
+            border: 2px solid var(--accent-gold);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .kanji-text {
+            font-size: 54px;
+            font-weight: bold;
+            color: #fff;
+            letter-spacing: 4px;
+            margin: 5px 0;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn-opt {
+            background: #171730;
+            color: var(--text-main);
+            border: 2px solid #2d2d54;
+            padding: 14px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.15s;
+        }
+
+        .btn-opt:hover {
+            background: #25254d;
+            border-color: var(--accent-cyan);
+            transform: translateY(-2px);
+        }
+
+        .btn-special {
+            grid-column: span 2;
+            background: linear-gradient(90deg, #ff2e63, #ff847c);
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: none;
+            box-shadow: 0 0 15px rgba(255,46,99,0.5);
+        }
+
+        /* Modal / Dictionary */
+        .modal {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92);
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        .modal-title {
+            color: var(--accent-gold);
+            font-size: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .close-btn {
+            cursor: pointer;
+            color: var(--accent-red);
+        }
+
+        .vocab-item {
+            border-bottom: 1px solid #222244;
+            padding: 8px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-box">
+    <header>
+        <h1>漢字クエスト RPG</h1>
+        <div class="mode-container">
+            <button class="mode-btn active" onclick="changeMode('N5')">N5</button>
+            <button class="mode-btn" onclick="changeMode('N4')">N4</button>
+            <button class="mode-btn" onclick="changeMode('MIXED')">N5+N4 Mix</button>
+            <button class="mode-btn" style="background:#485460; color:#fff;" onclick="toggleDict()">📖 Vocab</button>
+        </div>
+    </header>
+
+    <div class="stats-grid">
+        <div>
+            HP: <span id="hp-val">100</span>/100
+            <div class="bar-outer"><div id="hp-bar" class="hp-inner"></div></div>
+        </div>
+        <div>
+            LIMIT BREAK
+            <div class="bar-outer"><div id="limit-bar" class="limit-inner"></div></div>
+        </div>
+        <div style="text-align: right;">
+            SCORE: <strong id="score-val" style="color:var(--accent-gold);">0</strong><br>
+            COMBO: <strong id="combo-val" style="color:var(--accent-cyan);">0</strong>x
+        </div>
+    </div>
+
+    <div class="arena" id="arena">
+        <div id="hero" class="sprite">⚔️</div>
+        <div id="monster" class="sprite">👾</div>
+    </div>
+
+    <div class="question-card">
+        <div style="font-size:12px; color:#888;" id="level-tag">JLPT N5</div>
+        <div id="kanji-display" class="kanji-text">準備中...</div>
+    </div>
+
+    <div class="options-grid" id="options-box"></div>
+    <button id="special-btn" class="btn-special" onclick="useSpecial()">🔥 LIMIT BREAK SPECIAL ATTACK! 🔥</button>
+
+    <!-- Dictionary Modal -->
+    <div id="dict-modal" class="modal">
+        <div class="modal-title">
+            <span>N5 & N4 Kanji Glossary</span>
+            <span class="close-btn" onclick="toggleDict()">✖</span>
+        </div>
+        <div id="dict-list"></div>
+    </div>
+</div>
+
+<script>
+    // Audio Synth Engine
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(type) {
+        if(ctx.state === 'suspended') ctx.resume();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if(type === 'hit') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(300, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+            osc.start(); osc.stop(ctx.currentTime + 0.15);
+        } else if(type === 'hurt') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(120, ctx.currentTime);
+            osc.frequency.linearRampToValueAtTime(40, ctx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.4, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+            osc.start(); osc.stop(ctx.currentTime + 0.2);
+        } else if(type === 'special') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(200, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.4);
+            gain.gain.setValueAtTime(0.5, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+            osc.start(); osc.stop(ctx.currentTime + 0.4);
+        }
+    }
+
+    // Kanji Master Database (Extracted from Provided Textbooks)
+    const kanjiDb = [
+        // N5 Book Data
+        { k: "山川", r: "やまかわ", m: "တောင်နှင့်မြစ် (Mountain & River)", l: "N5" },
+        { k: "火山", r: "かざん", m: "မီးတောင် (Volcano)", l: "N5" },
+        { k: "水田", r: "すいでん", m: "စပါးစိုက်ခင်း (Paddy field)", l: "N5" },
+        { k: "百万", r: "ひゃくまん", m: "တစ်သန်း (1 Million)", l: "N5" },
+        { k: "上下", r: "じょうげ", m: "အပေါ်အောက် (Up & Down)", l: "N5" },
+        { k: "半分", r: "はんぶん", m: "တစ်ဝက် (Half)", l: "N5" },
+        { k: "先生", r: "せんせい", m: "ဆရာ/ဆရာမ (Teacher)", l: "N5" },
+        { k: "学校", r: "がっこう", m: "ကျောင်း (School)", l: "N5" },
+        { k: "友人", r: "ゆうじん", m: "သူငယ်ချင်း (Friend)", l: "N5" },
+        { k: "毎日", r: "まいにち", m: "နေ့တိုင်း (Everyday)", l: "N5" },
+        { k: "前後", r: "ぜんご", m: "ရှေ့နောက် (Front & Back)", l: "N5" },
+        { k: "左右", r: "さゆう", m: "ဘယ်ညာ (Left & Right)", l: "N5" },
+        { k: "天気", r: "てんき", m: "ရာသီဥတု (Weather)", l: "N5" },
+        { k: "電車", r: "でんしゃ", m: "ဓာတ်ရထား/ရထား (Train)", l: "N5" },
+        { k: "入口", r: "いりぐち", m: "အဝင်ဝ (Entrance)", l: "N5" },
+        { k: "出口", r: "でぐち", m: "အထွက်ဝ (Exit)", l: "N5" },
+        { k: "会話", r: "かいわ", m: "စကားပြော (Conversation)", l: "N5" },
+        { k: "読書", r: "どくしょ", m: "စာဖတ်ခြင်း (Reading)", l: "N5" },
+        { k: "時間", r: "じかん", m: "အချိန် (Time)", l: "N5" },
+        { k: "会社", r: "かいしゃ", m: "ကုမ္ပဏီ (Company)", l: "N5" },
+
+        // N4 Book Data
+        { k: "住所", r: "じゅうしょ", m: "လိပ်စာ (Address)", l: "N4" },
+        { k: "市長", r: "しちょう", m: "မြို့တော်ဝန် (Mayor)", l: "N4" },
+        { k: "明暗", r: "めいあん", m: "အလင်းနှင့်အမှောင် (Light & Dark)", l: "N4" },
+        { k: "特別", r: "とくべつ", m: "အထူး (Special)", l: "N4" },
+        { k: "便利", r: "べんり", m: "အဆင်ပြေသောအရာ (Convenient)", l: "N4" },
+        { k: "映画", r: "えいが", m: "ရုပ်ရှင် (Movie)", l: "N4" },
+        { k: "音楽", r: "おんがく", m: "ဂီတ/သီချင်း (Music)", l: "N4" },
+        { k: "写真", r: "しゃしん", m: "ဓာတ်ပုံ (Photo)", l: "N4" },
+        { k: "旅行", r: "りょこう", m: "ခရီးသွားခြင်း (Travel)", l: "N4" },
+        { k: "銀行", r: "ぎんこう", m: "ဘဏ် (Bank)", l: "N4" },
+        { k: "台風", r: "たいふう", m: "မုန်တိုင်း (Typhoon)", l: "N4" },
+        { k: "頭痛", r: "ずつう", m: "ခေါင်းကိုက်ခြင်း (Headache)", l: "N4" },
+        { k: "病院", r: "びょういん", m: "ဆေးရုံ (Hospital)", l: "N4" },
+        { k: "時計", r: "とけい", m: "နာရီ (Clock/Watch)", l: "N4" },
+        { k: "開始", r: "かいし", m: "စတင်ခြင်း (Start)", l: "N4" },
+        { k: "兄弟", r: "きょうだい", m: "ညီအစ်ကို (Brothers)", l: "N4" },
+        { k: "料理", r: "りょうり", m: "ဟင်းချက်ခြင်း/အာဟာရ (Cooking)", l: "N4" },
+        { k: "注意", r: "ちゅうい", m: "သတိပြုခြင်း (Caution)", l: "N4" },
+        { k: "図書館", r: "としょかん", m: "စာကြည့်တိုက် (Library)", l: "N4" },
+        { k: "交通", r: "こうつう", m: "ယာဉ်ကြော/သယ်ယူပို့ဆောင်ရေး (Traffic)", l: "N4" },
+        { k: "運転", r: "うんてん", m: "ကားမောင်းခြင်း (Driving)", l: "N4" },
+        { k: "漢字", r: "かんじ", m: "ခန်းဂျီး (Kanji)", l: "N4" },
+        { k: "勉強", r: "べんきょう", m: "စာလေ့လာခြင်း (Study)", l: "N4" },
+        { k: "試験", r: "しけん", m: "စာမေးပွဲ (Exam)", l: "N4" },
+        { k: "質問", r: "しつもん", m: "မေးခွန်း (Question)", l: "N4" },
+        { k: "説明", r: "せつめい", m: "ရှင်းလင်းချက် (Explanation)", l: "N4" }
+    ];
+
+    const monsters = ["👾 Slime", "👹 Goblin", "💀 Skeleton", "👺 Tengu", "🐉 Dragon"];
+    let curMode = 'N5';
+    let hp = 100;
+    let score = 0;
+    let combo = 0;
+    let limit = 0;
+    let curTarget = {};
+
+    function changeMode(m) {
+        curMode = m;
+        document.querySelectorAll('.mode-btn').forEach(b => {
+            if(!b.innerText.includes('Vocab')) b.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        nextTurn();
+    }
+
+    function getPool() {
+        if(curMode === 'MIXED') return kanjiDb;
+        return kanjiDb.filter(x => x.l === curMode);
+    }
+
+    function nextTurn() {
+        const pool = getPool();
+        curTarget = pool[Math.floor(Math.random() * pool.length)];
+        
+        document.getElementById('level-tag').innerText = `JLPT ${curTarget.l}`;
+        document.getElementById('kanji-display').innerText = curTarget.k;
+
+        let choices = [curTarget];
+        while(choices.length < 4) {
+            let r = kanjiDb[Math.floor(Math.random() * kanjiDb.length)];
+            if(!choices.includes(r)) choices.push(r);
+        }
+        choices.sort(() => Math.random() - 0.5);
+
+        const box = document.getElementById('options-box');
+        box.innerHTML = '';
+        choices.forEach(c => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-opt';
+            btn.innerText = `${c.r} - ${c.m}`;
+            btn.onclick = () => answer(c === curTarget);
+            box.appendChild(btn);
+        });
+    }
+
+    function answer(correct) {
+        if(correct) {
+            playSound('hit');
+            combo++;
+            score += 10 * combo;
+            limit = Math.min(100, limit + 25);
+            showPop('-20 HP', 'monster');
+        } else {
+            playSound('hurt');
+            combo = 0;
+            hp = Math.max(0, hp - 15);
+            showPop('-15 HP', 'hero');
+        }
+
+        updateUI();
+
+        if(hp <= 0) {
+            alert('Game Over! HP 0 ရောက်သွားပါပြီ။ ပြန်လည်စတင်ပါမည်။');
+            hp = 100; score = 0; combo = 0; limit = 0;
+            updateUI();
+        }
+
+        nextTurn();
+    }
+
+    function showPop(txt, targetId) {
+        const el = document.createElement('div');
+        el.className = 'damage-pop';
+        el.innerText = txt;
+        document.getElementById(targetId).appendChild(el);
+        setTimeout(() => el.remove(), 600);
+    }
+
+    function updateUI() {
+        document.getElementById('hp-val').innerText = hp;
+        document.getElementById('hp-bar').style.width = hp + '%';
+        document.getElementById('score-val').innerText = score;
+        document.getElementById('combo-val').innerText = combo;
+        document.getElementById('limit-bar').style.width = limit + '%';
+
+        if(limit >= 100) {
+            document.getElementById('special-btn').style.display = 'block';
+        } else {
+            document.getElementById('special-btn').style.display = 'none';
+        }
+    }
+
+    function useSpecial() {
+        playSound('special');
+        score += 100;
+        limit = 0;
+        hp = Math.min(100, hp + 30);
+        showPop('CRITICAL HIT!', 'monster');
+        updateUI();
+        nextTurn();
+    }
+
+    function toggleDict() {
+        const modal = document.getElementById('dict-modal');
+        if(modal.style.display === 'block') {
+            modal.style.display = 'none';
+        } else {
+            modal.style.display = 'block';
+            const list = document.getElementById('dict-list');
+            list.innerHTML = '';
+            kanjiDb.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'vocab-item';
+                div.innerHTML = `<span><strong>${item.k}</strong> (${item.r}) [${item.l}]</span><span>${item.m}</span>`;
+                list.appendChild(div);
+            });
+        }
+    }
+
+    // Init
+    nextTurn();
+</script>
+</body>
+</html>
